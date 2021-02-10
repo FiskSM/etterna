@@ -1,111 +1,89 @@
-# Traditional Compilation File Stuff.
-*.o
-*.obj
-*.a
-
-# CMake Files/Directories
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-CPackConfig.cmake
-CPackSourceConfig.cmake
-# The following are generated from CMake, and thus should be stopped.
-install_manifest.txt
-_CPack_Packages
-Build/**
-Debug/
-MinSizeRel/
-Release/
-RelWithDebInfo/
-Contents/
-Xcode/Info.StepMania.plist
-Xcode/plistHelper.hpp
-src/generated
-extern/mad-0.15.1b/config.h
-extern/libjpeg/jconfig.h
-extern/newogg/include/ogg/config_types.h
-
-# Text Editor Based Items
-*.log
-
-# Mac Programming Files
-*.pbxuser
-PBProject/build
-Xcode/build
-Xcode/*.xcodeproj/xcuserdata/
-*.xcodeproj/xcuserdata
-*.xcodeproj/project.xcworkspace
-*.xcscheme
-WorkspaceSettings.xcsettings
-UserInterfaceState.xcuserstate
-*.xccheckout
-contents.xcworkspacedata
-xcschememanagement.plist
-PBProject/Hardware.plist
-
-# Mac General Files
-*.app
-*.dmg
+# Common ignore files
 .DS_Store
+.vscode
+.vs
+.idea
+/[Bb]uild
 
-# Visual Studio
-*.sln
-*.vcxproj
-*.vcxproj.filters
-*.pdb
-*.ilk
-*.map
-*.res
-*.suo
-UpgradeLog*.htm
+# Ignore executables (Linux, macOS, Windows)
+/Etterna
+/Etterna-debug
+/Etterna-MinSizeRelease
+/Etterna-RelWithDebInfo
+/*.app
+/*.exe
 
-# Windows General Files
-*.exe
+# Etterna Related Ignore
+/Cache/
+/Logs/
+/Program/
+/Save/
+/Screenshots/
+/Songs/
 
-# Linux General Files
-.dirstamp
-Makefile
-stepmania
-Makefile.in
-config.status
-_build/*
-aclocal.m4
-autoconf/*
-autom4te.cache/*
-configure
-src/Makefile.in
-src/Makefile
-src/config.h
-src/config.h.in
-src/stamp-h1
-GtkModule.so
-StepMania
-core
+# Misc Ignores
+/CrashData
+/Program/CrashData
+/crashinfo.txt
+/nowplaying.txt
 
-# StepMania Specific
-Cache/
-Save/**
-Songs/
-Logs/
-src/*.so
-crashinfo.txt
+## Specific Ignores (To allow playing on development builds)
+# Some not included here because pending removal or not frequently changing (user assets)
+/Announcers/*
+!/Announcers/instructions.txt
 
-# include calc .a file
-!extern/MinaCalc/MinaCalc.a
-!extern/MinaCalc/libMinaCalc.a
+/Assets/Avatars/*
+!/Assets/Avatars/_fallback.png
+!/Assets/Avatars/Divide By Zero.png
+!/Assets/Avatars/Take Control.png
+!/Assets/Avatars/takemetothepromisedland.png
 
-# calc
-src/MinaCalc
+/Assets/Judgments/*
+!/Assets/Judgments/default 1x6 (Doubleres).png
+!/Assets/Judgments/Judgment Normal 2x6 (Doubleres).png
 
-# Unknown File Types
-tests/*.err
-*.ncb
-*.tlog
-*.user
-*.vdi
-*.pch
+/Assets/Toasties/*
+!/Assets/Toasties/default/
+!/Assets/Toasties/legacy/
 
-nsis_strings_temp\.inc
-BatchRecalc/*
+/NoteSkins/*
+!/NoteSkins/instructions.txt
+!/NoteSkins/beat/default/
+!/NoteSkins/common/
 
-Xcode/Info\.Etterna\.plist
+!/NoteSkins/dance/default/
+!/NoteSkins/dance/DivideByInf/
+!/NoteSkins/dance/DivideByZero_halved/
+!/NoteSkins/dance/DivideByZero_semihalved/
+!/NoteSkins/dance/DivideByZeroHollow/
+!/NoteSkins/dance/MultiplyByZero/
+!/NoteSkins/dance/MultiplyByZeroDoubleRes/
+!/NoteSkins/dance/SubtractByZero/
+
+!/NoteSkins/kb7/default/
+!/NoteSkins/kb7/orbital/
+!/NoteSkins/kb7/retrobar/
+!/NoteSkins/kb7/retrobar-iidx/
+!/NoteSkins/kb7/retrobar-o2jam/
+!/NoteSkins/kb7/retrobar-razor/
+!/NoteSkins/kb7/retrobar-razor_o2/
+
+!/NoteSkins/pump/cmd/
+!/NoteSkins/pump/cmd-routine-p1/
+!/NoteSkins/pump/cmd-routine-p2/
+!/NoteSkins/pump/complex/
+!/NoteSkins/pump/default/
+!/NoteSkins/pump/delta/
+!/NoteSkins/pump/delta-note/
+!/NoteSkins/pump/delta-routine-p1/
+!/NoteSkins/pump/delta-routine-p2/
+!/NoteSkins/pump/frame5p/
+!/NoteSkins/pump/newextra/
+!/NoteSkins/pump/pad/
+!/NoteSkins/pump/rhythm/
+!/NoteSkins/pump/simple/
+
+/Themes/*
+!/Themes/_fallback/
+!/Themes/Til Death
+!/Themes/bare-frames

@@ -1,9 +1,9 @@
 #import <Cocoa/Cocoa.h>
-#import "ProductInfo.h"
 #import "LoadingWindow_MacOSX.h"
-#import "RageUtil.h"
-#import "RageFile.h"
-#include "ThemeManager.h"
+#import "RageUtil/Utils/RageUtil.h"
+#import "RageUtil/File/RageFile.h"
+#import "Etterna/Singletons/ThemeManager.h"
+#import "Core/Misc/AppInfo.hpp"
 
 @interface LoadingWindowHelper : NSObject
 {
@@ -75,7 +75,7 @@
 	[m_Window setReleasedWhenClosed:YES];
 	[m_Window setExcludedFromWindowsMenu:YES];
 	[m_Window useOptimizedDrawing:YES];
-	[m_Window setTitle:@PRODUCT_FAMILY];
+	[m_Window setTitle:[NSString stringWithUTF8String:Core::AppInfo::APP_TITLE]];
 	[m_Window center];
 
 	// Set subviews.
@@ -123,11 +123,11 @@ LoadingWindow_MacOSX::~LoadingWindow_MacOSX()
 	[pool release];
 }
 
-void LoadingWindow_MacOSX::SetText( const RString &str )
+void LoadingWindow_MacOSX::SetText( const std::string &str )
 {
 	if( !g_Helper )
 		return;
-	NSString *s = [[NSString alloc] initWithUTF8String:str];
+	NSString *s = [[NSString alloc] initWithUTF8String:(str.c_str())];
 	[g_Helper->m_Text performSelectorOnMainThread:@selector(setString:) withObject:(s ? s : @"") waitUntilDone:NO];
 	[s release];
 }
@@ -135,8 +135,8 @@ void LoadingWindow_MacOSX::SetText( const RString &str )
 void LoadingWindow_MacOSX::SetSplash( const RageSurface *pSplash )
 {
 	RageFile f;
-	RString data;
-	vector<RString> vs;
+	std::string data;
+	vector<std::string> vs;
 
 	// Try to load a custom splash from the current theme, first.
 	GetDirListing( THEME->GetPathG( "Common", "splash"), vs, false, true );

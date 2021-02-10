@@ -1,7 +1,7 @@
-#include "global.h"
+#include "Etterna/Globals/global.h"
 #include "GetFileInformation.h"
 
-#include "RageUtil.h"
+#include "RageUtil/Utils/RageUtil.h"
 #include "archutils/Win32/ErrorStrings.h"
 #include <sys/stat.h>
 #include <windows.h>
@@ -11,163 +11,166 @@
 #pragma comment(lib, "version.lib")
 #endif
 
-bool GetFileVersion( const RString &sFile, RString &sOut )
+bool
+GetFileVersion(const std::string& sFile, std::string& sOut)
 {
 	do {
 		// Cast away const to work around header bug in VC6.
 		DWORD ignore;
-		DWORD iSize = GetFileVersionInfoSize( const_cast<char *>(sFile.c_str()), &ignore );
-		if( !iSize )
+		DWORD iSize =
+		  GetFileVersionInfoSize(const_cast<char*>(sFile.c_str()), &ignore);
+		if (!iSize)
 			break;
 
-		RString VersionBuffer( iSize, ' ' );
+		std::string VersionBuffer(iSize, ' ');
 		// Also VC6:
-		if( !GetFileVersionInfo( const_cast<char *>(sFile.c_str()), NULL, iSize, const_cast<char *>(VersionBuffer.c_str()) ) )
+		if (!GetFileVersionInfo(const_cast<char*>(sFile.c_str()),
+								NULL,
+								iSize,
+								const_cast<char*>(VersionBuffer.c_str())))
 			break;
 
-		WORD *iTrans;
+		WORD* iTrans;
 		UINT iTransCnt;
 
-		if( !VerQueryValue( (void *) VersionBuffer.c_str() , "\\VarFileInfo\\Translation",
-				(void **) &iTrans, &iTransCnt ) )
+		if (!VerQueryValue((void*)VersionBuffer.c_str(),
+						   "\\VarFileInfo\\Translation",
+						   (void**)&iTrans,
+						   &iTransCnt))
 			break;
 
-		if( iTransCnt == 0 )
+		if (iTransCnt == 0)
 			break;
 
-		char *str;
+		char* str;
 		UINT len;
 
-		RString sRes = ssprintf( "\\StringFileInfo\\%04x%04x\\FileVersion",
-			iTrans[0], iTrans[1] );
-		if( !VerQueryValue( (void *) VersionBuffer.c_str(), (char *) sRes.c_str(),
-				(void **) &str,  &len ) || len < 1)
+		std::string sRes = ssprintf(
+		  "\\StringFileInfo\\%04x%04x\\FileVersion", iTrans[0], iTrans[1]);
+		if (!VerQueryValue((void*)VersionBuffer.c_str(),
+						   (char*)sRes.c_str(),
+						   (void**)&str,
+						   &len) ||
+			len < 1)
 			break;
 
-		sOut = RString( str, len-1 );
-	} while(0);
+		sOut = std::string(str, len - 1);
+	} while (0);
 
 	// Get the size and date.
 	struct stat st;
-	if( stat( sFile, &st ) != -1 )
-	{
+	if (stat(sFile.c_str(), &st) != -1) {
 		struct tm t;
-		gmtime_r( &st.st_mtime, &t );
-		if( !sOut.empty() )
+		gmtime_r(&st.st_mtime, &t);
+		if (!sOut.empty())
 			sOut += " ";
-		sOut += ssprintf( "[%ib, %02i-%02i-%04i]", st.st_size, t.tm_mon+1, t.tm_mday, t.tm_year+1900 );
+		sOut += ssprintf("[%ib, %02i-%02i-%04i]",
+						 st.st_size,
+						 t.tm_mon + 1,
+						 t.tm_mday,
+						 t.tm_year + 1900);
 	}
 
 	return true;
 }
 
-RString FindSystemFile( const RString &sFile )
+std::string
+FindSystemFile(const std::string& sFile)
 {
 	char szWindowsPath[MAX_PATH];
-	GetWindowsDirectory( szWindowsPath, MAX_PATH );
+	GetWindowsDirectory(szWindowsPath, MAX_PATH);
 
-	const char *szPaths[] =
-	{
-		"/system32/",
-		"/system32/drivers/",
-		"/system/",
-		"/system/drivers/",
-		"/",
-		NULL
-	};
+	const char* szPaths[] = { "/system32/", "/system32/drivers/",
+							  "/system/",	"/system/drivers/",
+							  "/",			nullptr };
 
-	for( int i = 0; szPaths[i]; ++i )
-	{
-		RString sPath = ssprintf( "%s%s%s", szWindowsPath, szPaths[i], sFile.c_str() );
+	for (int i = 0; szPaths[i]; ++i) {
+		std::string sPath =
+		  ssprintf("%s%s%s", szWindowsPath, szPaths[i], sFile.c_str());
 		struct stat buf;
-		if( !stat(sPath, &buf) )
+		if (!stat(sPath.c_str(), &buf))
 			return sPath;
 	}
 
-	return RString();
+	return std::string();
 }
 
 /* Get the full path of the process running in iProcessID. On error, false is
  * returned and an error message is placed in sName. */
-bool GetProcessFileName( uint32_t iProcessID, RString &sName )
+bool
+GetProcessFileName(uint32_t iProcessID, std::string& sName)
 {
 	/* This method works in everything except for NT4, and only uses
 	 * kernel32.lib functions. */
 	do {
-		HANDLE hSnap = CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, iProcessID );
-		if( hSnap == NULL )
-		{
-			sName = werr_ssprintf( GetLastError(), "CreateToolhelp32Snapshot" );
+		HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, iProcessID);
+		if (hSnap == nullptr) {
+			sName = werr_ssprintf(GetLastError(), "CreateToolhelp32Snapshot");
 			break;
 		}
 
 		MODULEENTRY32 me;
-		ZERO( me );
+		ZERO(me);
 		me.dwSize = sizeof(MODULEENTRY32);
-		bool bRet = !!Module32First( hSnap, &me );
-		CloseHandle( hSnap );
+		bool bRet = !!Module32First(hSnap, &me);
+		CloseHandle(hSnap);
 
-		if( bRet )
-		{
+		if (bRet) {
 			sName = me.szExePath;
 			return true;
 		}
 
-		sName = werr_ssprintf( GetLastError(), "Module32First" );
-	} while(0);
+		sName = werr_ssprintf(GetLastError(), "Module32First");
+	} while (0);
 
 	// This method only works in NT/2K/XP.
 	do {
-		static HINSTANCE hPSApi = NULL;
-		typedef DWORD (WINAPI* pfnGetProcessImageFileNameA)(HANDLE hProcess, LPSTR lpImageFileName, DWORD nSize);
-		static pfnGetProcessImageFileNameA pGetProcessImageFileName = NULL;
+		static HINSTANCE hPSApi = nullptr;
+		typedef DWORD(WINAPI * pfnGetProcessImageFileNameA)(
+		  HANDLE hProcess, LPSTR lpImageFileName, DWORD nSize);
+		static pfnGetProcessImageFileNameA pGetProcessImageFileName = nullptr;
 		static bool bTried = false;
 
-		if( !bTried )
-		{
+		if (!bTried) {
 			bTried = true;
 
 			hPSApi = LoadLibrary("psapi.dll");
-			if( hPSApi == NULL )
-			{
-				sName = werr_ssprintf( GetLastError(), "LoadLibrary" );
+			if (hPSApi == nullptr) {
+				sName = werr_ssprintf(GetLastError(), "LoadLibrary");
 				break;
-			}
-			else
-			{
-				pGetProcessImageFileName = (pfnGetProcessImageFileNameA) GetProcAddress( hPSApi, "GetProcessImageFileNameA" );
-				if( pGetProcessImageFileName == NULL )
-				{
-					sName = werr_ssprintf( GetLastError(), "GetProcAddress" );
+			} else {
+				pGetProcessImageFileName =
+				  (pfnGetProcessImageFileNameA)GetProcAddress(
+					hPSApi, "GetProcessImageFileNameA");
+				if (pGetProcessImageFileName == nullptr) {
+					sName = werr_ssprintf(GetLastError(), "GetProcAddress");
 					break;
 				}
 			}
 		}
 
-		if( pGetProcessImageFileName != NULL )
-		{
-			HANDLE hProc = OpenProcess( PROCESS_VM_READ|PROCESS_QUERY_INFORMATION, NULL, iProcessID );
-			if( hProc == NULL )
-			{
-				sName = werr_ssprintf( GetLastError(), "OpenProcess" );
+		if (pGetProcessImageFileName != nullptr) {
+			HANDLE hProc = OpenProcess(
+			  PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, NULL, iProcessID);
+			if (hProc == nullptr) {
+				sName = werr_ssprintf(GetLastError(), "OpenProcess");
 				break;
 			}
 
 			char buf[1024];
-			int iRet = pGetProcessImageFileName( hProc, buf, sizeof(buf) );
-			CloseHandle( hProc );
+			int iRet = pGetProcessImageFileName(hProc, buf, sizeof(buf));
+			CloseHandle(hProc);
 
-			if( iRet )
-			{
-				if( iRet == sizeof(buf) )
-					buf[iRet-1] = 0;
+			if (iRet) {
+				if (iRet == sizeof(buf))
+					buf[iRet - 1] = 0;
 				sName = buf;
 				return true;
 			}
 
-			sName = werr_ssprintf( GetLastError(), "GetProcessImageFileName" );
+			sName = werr_ssprintf(GetLastError(), "GetProcessImageFileName");
 		}
-	} while(0);
+	} while (0);
 
 	return false;
 }
@@ -175,7 +178,7 @@ bool GetProcessFileName( uint32_t iProcessID, RString &sName )
 /*
  * (c) 2004 Glenn Maynard
  * All rights reserved.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -185,7 +188,7 @@ bool GetProcessFileName( uint32_t iProcessID, RString &sName )
  * copyright notice(s) and this permission notice appear in all copies of
  * the Software and that both the above copyright notice(s) and this
  * permission notice appear in supporting documentation.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF

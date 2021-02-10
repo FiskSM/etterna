@@ -1,31 +1,33 @@
-#include "global.h"
-#include "RageDisplay.h"
-#include "RageTextureManager.h"
-#include "RageUtil.h"
-#include "RageLog.h"
+#include "Etterna/Globals/global.h"
+#include "RageUtil/Graphics/RageDisplay.h"
+#include "RageUtil/Graphics/RageTextureManager.h"
+#include "RageUtil/Utils/RageUtil.h"
+#include "Core/Services/Locator.hpp"
 #include "MovieTexture_Null.h"
-#include "RageSurface.h"
+#include "RageUtil/Graphics/RageSurface.h"
 
-class MovieTexture_Null : public RageMovieTexture {
-public:
+class MovieTexture_Null : public RageMovieTexture
+{
+  public:
 	MovieTexture_Null(RageTextureID ID);
 	virtual ~MovieTexture_Null();
 	void Invalidate() { texHandle = 0; }
-	unsigned GetTexHandle() const { return texHandle; }
-	void Update(float /* delta */) { }
-	void Reload() { }
-	void SetPosition(float /* seconds */) { }
-	void SetPlaybackRate(float) { }
-	void SetLooping(bool looping=true) { loop = looping; }
+	intptr_t GetTexHandle() const { return texHandle; }
+	void Update(float /* delta */) {}
+	void Reload() {}
+	void SetPosition(float /* seconds */) {}
+	void SetPlaybackRate(float) {}
+	void SetLooping(bool looping = true) { loop = looping; }
 
-private:
-	bool loop;
-	unsigned texHandle;
+  private:
+	bool loop = false;
+	intptr_t texHandle;
 };
 
-MovieTexture_Null::MovieTexture_Null(RageTextureID ID) : RageMovieTexture(ID)
+MovieTexture_Null::MovieTexture_Null(RageTextureID ID)
+  : RageMovieTexture(ID)
 {
-	LOG->Trace("MovieTexture_Null::MovieTexture_Null(ID)");
+	Locator::getLogger()->trace("MovieTexture_Null::MovieTexture_Null(ID)");
 	texHandle = 0;
 
 	RageTextureID actualID = GetID();
@@ -44,53 +46,36 @@ MovieTexture_Null::MovieTexture_Null(RageTextureID ID) : RageMovieTexture(ID)
 	CreateFrameRects();
 
 	RagePixelFormat pixfmt = RagePixelFormat_RGBA4;
-	if( !DISPLAY->SupportsTextureFormat(pixfmt) )
+	if (!DISPLAY->SupportsTextureFormat(pixfmt))
 		pixfmt = RagePixelFormat_RGBA8;
-	ASSERT( DISPLAY->SupportsTextureFormat(pixfmt) );
+	ASSERT(DISPLAY->SupportsTextureFormat(pixfmt));
 
-	const RageDisplay::RagePixelFormatDesc *pfd = DISPLAY->GetPixelFormatDesc( pixfmt );
-	RageSurface *img = CreateSurface( size, size, pfd->bpp,
-		pfd->masks[0], pfd->masks[1], pfd->masks[2], pfd->masks[3] );
-	memset( img->pixels, 0, img->pitch*img->h );
+	const RageDisplay::RagePixelFormatDesc* pfd =
+	  DISPLAY->GetPixelFormatDesc(pixfmt);
+	RageSurface* img = CreateSurface(size,
+									 size,
+									 pfd->bpp,
+									 pfd->masks[0],
+									 pfd->masks[1],
+									 pfd->masks[2],
+									 pfd->masks[3]);
+	memset(img->pixels, 0, img->pitch * img->h);
 
-	texHandle = DISPLAY->CreateTexture( pixfmt, img, false );
+	texHandle = DISPLAY->CreateTexture(pixfmt, img, false);
 
 	delete img;
 }
 
 MovieTexture_Null::~MovieTexture_Null()
 {
-	DISPLAY->DeleteTexture( texHandle );
+	DISPLAY->DeleteTexture(texHandle);
 }
 
-REGISTER_MOVIE_TEXTURE_CLASS( Null );
+REGISTER_MOVIE_TEXTURE_CLASS(Null);
 
-RageMovieTexture *RageMovieTextureDriver_Null::Create( const RageTextureID &ID, RString &sError )
+std::shared_ptr<RageMovieTexture>
+RageMovieTextureDriver_Null::Create(const RageTextureID& ID,
+									std::string& sError)
 {
-	return new MovieTexture_Null( ID );
+	return std::make_shared<MovieTexture_Null>(ID);
 }
-
-/*
- * (c) 2003 Steve Checkoway
- * All rights reserved.
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, and/or sell copies of the Software, and to permit persons to
- * whom the Software is furnished to do so, provided that the above
- * copyright notice(s) and this permission notice appear in all copies of
- * the Software and that both the above copyright notice(s) and this
- * permission notice appear in supporting documentation.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
- * THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS
- * INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT
- * OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
- * OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
- * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */

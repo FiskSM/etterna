@@ -3,7 +3,6 @@ Lines with a single string (e.g. TitleMenu = "ScreenTitleMenu") are referenced
 in the metrics as Branch.keyname.
 If the line is a function, you'll have to use Branch.keyname() instead.
 --]]
-
 -- used for various SMOnline-enabled screens:
 function SMOnlineScreen()
 	if not IsNetSMOnline() then
@@ -33,10 +32,23 @@ function GameOverOrContinue()
 	end
 end
 
+function ToGameplay()
+	local mode = GAMESTATE:GetGameplayMode()
+	if mode == "GameplayMode_Practice" then
+		return "ScreenGameplayPractice"
+	elseif mode == "GameplayMode_Replay" then
+		return "ScreenGameplayReplay"
+	else
+		return "ScreenGameplay"
+	end
+end
+
 Branch = {
-	Init = function() return "ScreenInit" end,
+	Init = function()
+		return "ScreenInit"
+	end,
 	AfterInit = function()
-		if GAMESTATE:GetCoinMode() == 'CoinMode_Home' then
+		if GAMESTATE:GetCoinMode() == "CoinMode_Home" then
 			return Branch.TitleMenu()
 		else
 			return "ScreenLogo"
@@ -62,11 +74,7 @@ Branch = {
 		end
 	end,
 	AfterTitleMenu = function()
-		if PREFSMAN:GetPreference("ShowCaution") then
-			return "ScreenCaution"
-		else
-			return Branch.StartGame()
-		end
+		return Branch.StartGame()
 	end,
 	StartGame = function()
 		if SONGMAN:GetNumSongs() == 0 and SONGMAN:GetNumAdditionalSongs() == 0 then
@@ -75,7 +83,7 @@ Branch = {
 		if PROFILEMAN:GetNumLocalProfiles() >= 2 then
 			return "ScreenSelectProfile"
 		else
-			if THEME:GetMetric("Common","AutoSetStyle") == false then
+			if THEME:GetMetric("Common", "AutoSetStyle") == false then
 				return "ScreenSelectStyle"
 			else
 				return "ScreenProfileLoad"
@@ -103,40 +111,37 @@ Branch = {
 	AfterSelectStyle = function()
 		if IsNetConnected() then
 			ReportStyle()
-			GAMESTATE:ApplyGameCommand("playmode,regular")
 		end
 		return "ScreenProfileLoad"
-
-		--return CHARMAN:GetAllCharacters() ~= nil and "ScreenSelectCharacter" or "ScreenGameInformation"
 	end,
 	AfterSelectProfile = function()
-		if ( THEME:GetMetric("Common","AutoSetStyle") == true ) then
+		if (THEME:GetMetric("Common", "AutoSetStyle") == true) then
 			return "ScreenSelectMusic"
 		else
 			return "ScreenSelectStyle"
 		end
 	end,
 	AfterNetSelectProfile = function()
-			return SMOnlineScreen()
-	end,
-	AfterProfileLoad = function()
-		return "ScreenSelectPlayMode"
+		return SMOnlineScreen()
 	end,
 	AfterProfileSave = function()
 		-- Might be a little too broken? -- Midiman
 		if GAMESTATE:IsEventMode() then
 			return "ScreenSelectMusic"
-		elseif STATSMAN:GetCurStageStats():AllFailed() then
+		elseif STATSMAN:GetCurStageStats():Failed() then
 			return GameOverOrContinue()
 		else
 			return "ScreenSelectMusic"
 		end
 	end,
+	AfterProfileLoad = function()
+		return "ScreenSelectMusic"
+	end,
 	AfterNetProfileSave = function()
 		-- Might be a little too broken? -- Midiman
 		if GAMESTATE:IsEventMode() then
 			return "ScreenNetSelectMusic"
-		elseif STATSMAN:GetCurStageStats():AllFailed() then
+		elseif STATSMAN:GetCurStageStats():Failed() then
 			return GameOverOrContinue()
 		else
 			return "ScreenNetSelectMusic"
@@ -167,16 +172,8 @@ Branch = {
 		end
 	end,
 	PlayerOptions = function()
-		local pm = GAMESTATE:GetPlayMode()
-		local restricted = { PlayMode_Oni= true, PlayMode_Rave= true,
-			--"PlayMode_Battle" -- ??
-		}
-		local optionsScreen = "ScreenPlayerOptions"
-		if restricted[pm] then
-			optionsScreen = "ScreenPlayerOptionsRestricted"
-		end
 		if SCREENMAN:GetTopScreen():GetGoToOptions() then
-			return optionsScreen
+			return "ScreenPlayerOptions"
 		else
 			return "ScreenStageInformation"
 		end
@@ -188,83 +185,47 @@ Branch = {
 			return "ScreenStageInformation"
 		end
 	end,
-	GameplayScreen = function()
-		return IsRoutine() and "ScreenGameplayShared" or "ScreenGameplay"
-	end,
 	AfterGameplay = function()
-		-- pick an evaluation screen based on settings.
-		if THEME:GetMetric("ScreenHeartEntry", "HeartEntryEnabled") then
-			local go_to_heart= false
-			for i, pn in ipairs(GAMESTATE:GetEnabledPlayers()) do
-				local profile= PROFILEMAN:GetProfile(pn)
-				if profile and profile:GetIgnoreStepCountCalories() then
-					go_to_heart= true
-				end
-			end
-			if go_to_heart then
-				return "ScreenHeartEntry"
-			end
-			return "ScreenEvaluationNormal"
-		else
-			return "ScreenEvaluationNormal"
-		end
+		return "ScreenEvaluationNormal"
 	end,
 	AfterNetGameplay = function()
-		-- pick an evaluation screen based on settings.
-		if THEME:GetMetric("ScreenHeartEntry", "HeartEntryEnabled") then
-			local go_to_heart= false
-			for i, pn in ipairs(GAMESTATE:GetEnabledPlayers()) do
-				local profile= PROFILEMAN:GetProfile(pn)
-				if profile and profile:GetIgnoreStepCountCalories() then
-					go_to_heart= true
-				end
-			end
-			if go_to_heart then
-				return "ScreenHeartEntry"
-			end
-			return "ScreenNetEvaluation"
-		else
-			return "ScreenNetEvaluation"
-		end
-	end,
-	AfterHeartEntry= function()
-		return Branch.EvaluationScreen()
+		return "ScreenNetEvaluation"
 	end,
 	AfterEvaluation = function()
-			local allFailed = STATSMAN:GetCurStageStats():AllFailed()
-			local song = GAMESTATE:GetCurrentSong()
+		local Failed = STATSMAN:GetCurStageStats():Failed()
+		local song = GAMESTATE:GetCurrentSong()
 
-			if GAMESTATE:IsEventMode() or stagesLeft >= 1 then
-				return "ScreenProfileSave"
-			elseif song:IsLong() and maxStages <= 2 and stagesLeft < 1 and allFailed then
-				return "ScreenProfileSaveSummary"
-			elseif song:IsMarathon() and maxStages <= 3 and stagesLeft < 1 and allFailed then
-				return "ScreenProfileSaveSummary"
-			elseif maxStages >= 2 and stagesLeft < 1 and allFailed then
-				return "ScreenProfileSaveSummary"
-			elseif allFailed then
-				return "ScreenProfileSaveSummary"
-			else
-				return "ScreenProfileSave"
-			end
+		if GAMESTATE:IsEventMode() or stagesLeft >= 1 then
+			return "ScreenProfileSave"
+		elseif song:IsLong() and maxStages <= 2 and stagesLeft < 1 and Failed then
+			return "ScreenProfileSaveSummary"
+		elseif song:IsMarathon() and maxStages <= 3 and stagesLeft < 1 and Failed then
+			return "ScreenProfileSaveSummary"
+		elseif maxStages >= 2 and stagesLeft < 1 and Failed then
+			return "ScreenProfileSaveSummary"
+		elseif Failed then
+			return "ScreenProfileSaveSummary"
+		else
+			return "ScreenProfileSave"
+		end
 	end,
 	AfterNetEvaluation = function()
-			local allFailed = STATSMAN:GetCurStageStats():AllFailed()
-			local song = GAMESTATE:GetCurrentSong()
+		local Failed = STATSMAN:GetCurStageStats():Failed()
+		local song = GAMESTATE:GetCurrentSong()
 
-			if GAMESTATE:IsEventMode() or stagesLeft >= 1 then
-				return "ScreenNetProfileSave"
-			elseif song:IsLong() and maxStages <= 2 and stagesLeft < 1 and allFailed then
-				return "ScreenProfileSaveSummary"
-			elseif song:IsMarathon() and maxStages <= 3 and stagesLeft < 1 and allFailed then
-				return "ScreenProfileSaveSummary"
-			elseif maxStages >= 2 and stagesLeft < 1 and allFailed then
-				return "ScreenProfileSaveSummary"
-			elseif allFailed then
-				return "ScreenProfileSaveSummary"
-			else
-				return "ScreenNetProfileSave"
-			end
+		if GAMESTATE:IsEventMode() or stagesLeft >= 1 then
+			return "ScreenNetProfileSave"
+		elseif song:IsLong() and maxStages <= 2 and stagesLeft < 1 and Failed then
+			return "ScreenProfileSaveSummary"
+		elseif song:IsMarathon() and maxStages <= 3 and stagesLeft < 1 and Failed then
+			return "ScreenProfileSaveSummary"
+		elseif maxStages >= 2 and stagesLeft < 1 and Failed then
+			return "ScreenProfileSaveSummary"
+		elseif Failed then
+			return "ScreenProfileSaveSummary"
+		else
+			return "ScreenNetProfileSave"
+		end
 	end,
 	AfterSummary = function()
 		return "ScreenProfileSaveSummary"
@@ -275,7 +236,7 @@ Branch = {
 	BackOutOfNetwork = function()
 		return "ScreenTitleMenu"
 	end,
- 	AfterSaveSummary = function()
+	AfterSaveSummary = function()
 		return GameOverOrContinue()
 	end,
 	AfterContinue = function()
